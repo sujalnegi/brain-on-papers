@@ -1,0 +1,4 @@
+color1: #0D1821
+color2: #79745C
+color3: #6C7D47
+
