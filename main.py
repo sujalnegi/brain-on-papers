@@ -1,46 +1,55 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import os
+from dotenv import load_dotenv
+import firebase_admin
+from firebase_admin import credentials, auth
+
+load_dotenv()
+
+cred_path = os.getenv('FIREBASE_CREDENTIALS_PATH', 'firebase-credentials.json')
+if os.path.exists(cred_path):
+    cred = credentials.Certificate(cred_path)
+    firebase_admin.initialize_app(cred)
+    print("✓ Firebase Admin SDK initialized successfully")
+else:
+    print(f"⚠ Warning: Firebase credentials file not found at {cred_path}")
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # Secret key for session management
+app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24))
 
-# Home route - redirects to login
 @app.route('/')
 def index():
     return redirect(url_for('login'))
 
-# Login route
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login')
 def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        remember = request.form.get('remember')
-        
-        # Add your authentication logic here
-        # For now, we'll just redirect to dashboard
-        # In production, verify credentials against database
-        
-        if email and password:
-            session['user'] = email
-            flash('Login successful!', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Please enter valid credentials', 'error')
     
-    return render_template('login.html')
+    firebase_config = {
+        'apiKey': os.getenv('FIREBASE_API_KEY'),
+        'authDomain': os.getenv('FIREBASE_AUTH_DOMAIN'),
+        'projectId': os.getenv('FIREBASE_PROJECT_ID'),
+        'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET'),
+        'messagingSenderId': os.getenv('FIREBASE_MESSAGING_SENDER_ID'),
+        'appId': os.getenv('FIREBASE_APP_ID'),
+        'measurementId': os.getenv('FIREBASE_MEASUREMENT_ID')
+    }
+    
+    api_key = firebase_config['apiKey']
+    if api_key:
+        print(f"✓ Firebase API Key loaded: {api_key[:10]}...{api_key[-4:]}")
+    else:
+        print("✗ Firebase API Key is None or empty!")
+    
+    return render_template('login.html', firebase_config=firebase_config)
 
-# Dashboard route
 @app.route('/dashboard')
 def dashboard():
-    # Check if user is logged in
     if 'user' not in session:
         flash('Please login to access the dashboard', 'warning')
         return redirect(url_for('login'))
     
     return render_template('dashboard.html')
 
-# Logout route
 @app.route('/logout')
 def logout():
     session.pop('user', None)

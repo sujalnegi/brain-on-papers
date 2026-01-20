@@ -62,8 +62,45 @@ node_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# Environment variables and API keys
 .env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+env_content.txt
+*.env
+
+# Firebase credentials and service accounts
+firebase-credentials.json
+*-firebase-adminsdk-*.json
+serviceAccountKey.json
+service-account-*.json
+
+# Python virtual environment
+venv/
+env/
+ENV/
+.venv
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Flask specific
+instance/
+.webassets-cache
+
+# Secret keys and credentials
+secrets.json
+credentials.json
+*.pem
+*.key
+.secret
 
 # dataconnect generated files
 .dataconnect
