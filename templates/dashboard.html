@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard|Brain on Papers</title>
+    <meta name="description" content="Manage your whiteboards and research notes">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <span>Brain on Papers</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="material-symbols-outlined">folder</span>
+                    <span>My Boards</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="material-symbols-outlined">star</span>
+                    <span>Favorites</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="material-symbols-outlined">schedule</span>
+                    <span>Recent</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="material-symbols-outlined">delete</span>
+                    <span>Trash</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <span class="material-symbols-outlined">person</span>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">{{ user.name if user else 'User' }}</div>
+                        <div class="user-email">{{ user.email if user else 'user@example.com' }}</div>
+                    </div>
+                    <a href="/logout" class="logout-btn" title="Logout">
+                        <span class="material-symbols-outlined">logout</span>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-bar">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text" placeholder="Search boards...">
+                </div>
+
+                <div class="top-bar-actions">
+                    <button class="icon-btn" title="Notifications">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <button class="icon-btn" title="Settings">
+                        <span class="material-symbols-outlined">settings</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <div class="page-header">
+                    <div class="header-left">
+                        <h1>My Boards</h1>
+                        <p class="subtitle">Create and manage your whiteboards</p>
+                    </div>
+                    <button class="btn-primary create-board-btn">
+                        <span class="material-symbols-outlined">add</span>
+                        <span>Create New Board</span>
+                    </button>
+                </div>
+
+                <div class="filter-tabs">
+                    <button class="tab-btn active">All Boards</button>
+                </div>
+
+                <div class="boards-grid">
+                    <div class="board-card new-board">
+                        <div class="new-board-content">
+                            <div class="new-board-icon">
+                                <span class="material-symbols-outlined">add_circle</span>
+                            </div>
+                            <h3>Create New Board</h3>
+                            <p>Start a fresh whiteboard</p>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

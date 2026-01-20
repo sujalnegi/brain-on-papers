@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 import firebase_admin
@@ -16,6 +17,7 @@ else:
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', os.urandom(24))
+CORS(app)
 
 @app.route('/')
 def index():
@@ -45,10 +47,34 @@ def login():
 @app.route('/dashboard')
 def dashboard():
     if 'user' not in session:
-        flash('Please login to access the dashboard', 'warning')
         return redirect(url_for('login'))
     
-    return render_template('dashboard.html')
+    return render_template('dashboard.html', user=session['user'])
+
+@app.route('/auth/verify', methods=['POST'])
+def verify_auth():
+    try:
+        id_token = request.json.get('idToken')
+        
+        if not id_token:
+            return jsonify({'error': 'No token provided'}), 400
+        
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+        email = decoded_token.get('email')
+        name = decoded_token.get('name', email)
+        
+        session['user'] = {
+            'uid': uid,
+            'email': email,
+            'name': name
+        }
+        
+        return jsonify({'success': True, 'redirect': url_for('dashboard')}), 200
+    
+    except Exception as e:
+        print(f"Authentication error: {e}")
+        return jsonify({'error': str(e)}), 401
 
 @app.route('/logout')
 def logout():

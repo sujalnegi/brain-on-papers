@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Brain on Papers</title>
+    <title>Login|Brain on Papers</title>
     <meta name="description" content="Login to access your Brain on Papers account">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,6 @@
 
 <body>
     <div class="container">
-        <!-- Left Panel - Branding -->
         <div class="left-panel">
             <div class="branding-content">
                 <div class="logo-section">
@@ -32,7 +31,7 @@
                     </div>
                     <h1 class="brand-title">Brain on Papers</h1>
                 </div>
-                <p class="brand-tagline">Your intelligent research companion</p>
+                <p class="brand-tagline">Your Brainstorming companion</p>
 
                 <div class="features-list">
                     <div class="feature-item">
@@ -43,9 +42,6 @@
                             <h3>Smart Organization</h3>
                             <p>Keep your research papers organized and accessible</p>
                         </div>
-                    </div>
-                    <div class="feature-item">
-
                     </div>
                     <div class="feature-item">
                         <div class="feature-icon">
@@ -62,11 +58,9 @@
             <div class="decorative-elements">
                 <div class="floating-circle circle-1"></div>
                 <div class="floating-circle circle-2"></div>
-                <div class="floating-circle circle-3"></div>
             </div>
         </div>
 
-        <!-- Right Panel - Login Form -->
         <div class="right-panel">
             <div class="login-container">
                 <div class="login-header">
@@ -131,18 +125,42 @@
         const googleProvider = new GoogleAuthProvider();
         const githubProvider = new GithubAuthProvider();
 
+        async function handleAuthSuccess(result, provider) {
+            try {
+                const user = result.user;
+                const idToken = await user.getIdToken();
+
+                console.log(`${provider} login successful`, user);
+
+                const response = await fetch('/auth/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ idToken })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    throw new Error(data.error || 'Authentication failed');
+                }
+            } catch (error) {
+                console.error('Authentication error:', error);
+                alert(`Login failed: ${error.message}`);
+            }
+        }
+
         const googleBtn = document.querySelector('.google-btn');
         if (googleBtn) {
             googleBtn.addEventListener('click', () => {
                 signInWithPopup(auth, googleProvider)
-                    .then((result) => {
-                        const user = result.user;
-                        console.log("Google login successful", user);
-                        window.location.href = "/dashboard";
-                    }).catch((error) => {
+                    .then((result) => handleAuthSuccess(result, 'Google'))
+                    .catch((error) => {
                         console.error("Google login failed", error);
-                        const errorMessage = error.message;
-                        alert(`Login failed: ${errorMessage}`);
+                        alert(`Login failed: ${error.message}`);
                     });
             });
         }
@@ -151,14 +169,10 @@
         if (githubBtn) {
             githubBtn.addEventListener('click', () => {
                 signInWithPopup(auth, githubProvider)
-                    .then((result) => {
-                        const user = result.user;
-                        console.log("GitHub login successful", user);
-                        window.location.href = "/dashboard";
-                    }).catch((error) => {
+                    .then((result) => handleAuthSuccess(result, 'GitHub'))
+                    .catch((error) => {
                         console.error("GitHub login failed", error);
-                        const errorMessage = error.message;
-                        alert(`Login failed: ${errorMessage}`);
+                        alert(`Login failed: ${error.message}`);
                     });
             });
         }
