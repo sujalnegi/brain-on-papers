@@ -51,6 +51,13 @@ def dashboard():
     
     return render_template('dashboard.html', user=session['user'])
 
+@app.route('/whiteboard')
+def whiteboard():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    return render_template('whiteboard.html', user=session['user'])
+
 @app.route('/auth/verify', methods=['POST'])
 def verify_auth():
     try:
@@ -78,8 +85,20 @@ def verify_auth():
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
-    flash('You have been logged out', 'info')
+    firebase_config = {
+        'apiKey': os.getenv('FIREBASE_API_KEY'),
+        'authDomain': os.getenv('FIREBASE_AUTH_DOMAIN'),
+        'projectId': os.getenv('FIREBASE_PROJECT_ID'),
+        'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET'),
+        'messagingSenderId': os.getenv('FIREBASE_MESSAGING_SENDER_ID'),
+        'appId': os.getenv('FIREBASE_APP_ID'),
+        'measurementId': os.getenv('FIREBASE_MEASUREMENT_ID')
+    }
+    return render_template('logout.html', firebase_config=firebase_config)
+
+@app.route('/logout-complete')
+def logout_complete():
+    session.clear()
     return redirect(url_for('login'))
 
 if __name__ == '__main__':

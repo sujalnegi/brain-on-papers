@@ -114,12 +114,6 @@
             measurementId: "{{ firebase_config.measurementId }}"
         };
 
-        console.log("Firebase Config:", {
-            apiKey: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 10)}...` : "MISSING",
-            authDomain: firebaseConfig.authDomain || "MISSING",
-            projectId: firebaseConfig.projectId || "MISSING"
-        });
-
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const googleProvider = new GoogleAuthProvider();
@@ -153,14 +147,32 @@
             }
         }
 
+
+        function handleAccountConflict(error, providerName) {
+            const email = error.customData?.email || 'your email';
+
+            let existingProvider = 'another provider';
+            if (providerName === 'GitHub') {
+                existingProvider = 'Google';
+            } else if (providerName === 'Google') {
+                existingProvider = 'GitHub';
+            }
+
+            alert(`An account with ${email} already exists.\n\nPlease sign in using ${existingProvider} instead.\n\nNote: You previously created an account with ${existingProvider}.`);
+        }
+
         const googleBtn = document.querySelector('.google-btn');
         if (googleBtn) {
             googleBtn.addEventListener('click', () => {
                 signInWithPopup(auth, googleProvider)
                     .then((result) => handleAuthSuccess(result, 'Google'))
                     .catch((error) => {
-                        console.error("Google login failed", error);
-                        alert(`Login failed: ${error.message}`);
+                        if (error.code === 'auth/account-exists-with-different-credential') {
+                            handleAccountConflict(error, 'Google');
+                        } else {
+                            console.error("Google login failed", error);
+                            alert(`Login failed: ${error.message}`);
+                        }
                     });
             });
         }
@@ -171,8 +183,12 @@
                 signInWithPopup(auth, githubProvider)
                     .then((result) => handleAuthSuccess(result, 'GitHub'))
                     .catch((error) => {
-                        console.error("GitHub login failed", error);
-                        alert(`Login failed: ${error.message}`);
+                        if (error.code === 'auth/account-exists-with-different-credential') {
+                            handleAccountConflict(error, 'GitHub');
+                        } else {
+                            console.error("GitHub login failed", error);
+                            alert(`Login failed: ${error.message}`);
+                        }
                     });
             });
         }
