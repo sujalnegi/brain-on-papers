@@ -2,8 +2,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const createBoardBtns = document.querySelectorAll('.create-board-btn, .new-board');
 
     createBoardBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            window.location.href = '/whiteboard';
+        btn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/boards/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: 'Untitled Board',
+                        content: '',
+                        thumbnail: ''
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    console.error('Error creating board:', data.error);
+                    alert('Failed to create board. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error creating board:', error);
+                alert('Failed to create board. Please try again.');
+            }
         });
     });
 

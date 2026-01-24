@@ -79,13 +79,6 @@
                 </div>
 
                 <div class="top-bar-actions">
-                    <button class="icon-btn" title="Notifications">
-                        <span class="material-symbols-outlined">notifications</span>
-                        <span class="notification-badge">3</span>
-                    </button>
-                    <button class="icon-btn" title="Settings">
-                        <span class="material-symbols-outlined">settings</span>
-                    </button>
                 </div>
             </header>
 
@@ -116,6 +109,35 @@
                         </div>
                     </div>
 
+                    {% for board in boards %}
+                    <div class="board-card" data-board-id="{{ board.id }}"
+                        onclick="window.location.href='/whiteboard/{{ board.id }}'">
+                        <div class="board-preview">
+                            {% if board.thumbnail %}
+                            <img src="{{ board.thumbnail }}" alt="{{ board.title }}">
+                            {% else %}
+                            <div class="board-placeholder">
+                                <span class="material-symbols-outlined">draw</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="board-info">
+                            <h3 class="board-title">{{ board.title }}</h3>
+                            <p class="board-date">
+                                {% if board.get('updatedAt') %}
+                                Last modified: Just now
+                                {% else %}
+                                Last modified: Just now
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="board-actions">
+                            <button class="action-btn" title="More options" onclick="event.stopPropagation()">
+                                <span class="material-symbols-outlined">more_vert</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
 
                 </div>
             </div>
