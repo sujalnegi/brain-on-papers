@@ -61,16 +61,41 @@ def dashboard():
             boards_docs = boards_ref.stream()
             boards_list = [{'id': doc.id, **doc.to_dict()} for doc in boards_docs]
             
-            # Sort in Python if needed
+            boards_list = [board for board in boards_list if not board.get('deleted', False)]
+            
             boards = sorted(boards_list, key=lambda x: x.get('createdAt', datetime.min), reverse=True)
             
-            print(f"✓ Fetched {len(boards)} boards for user {session['user']['uid']}")
+            print(f"✓ Fetched {len(boards)} active boards for user {session['user']['uid']}")
         except Exception as e:
             print(f"✗ Error fetching boards: {e}")
             import traceback
             traceback.print_exc()
     
     return render_template('dashboard.html', user=session['user'], boards=boards)
+
+@app.route('/trash')
+def trash():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    deleted_boards = []
+    if db:
+        try:
+            boards_ref = db.collection('boards').where('userId', '==', session['user']['uid'])
+            boards_docs = boards_ref.stream()
+            boards_list = [{'id': doc.id, **doc.to_dict()} for doc in boards_docs]
+            
+            deleted_boards = [board for board in boards_list if board.get('deleted', False)]
+            
+            deleted_boards = sorted(deleted_boards, key=lambda x: x.get('deletedAt', datetime.min), reverse=True)
+            
+            print(f"✓ Fetched {len(deleted_boards)} deleted boards for user {session['user']['uid']}")
+        except Exception as e:
+            print(f"✗ Error fetching deleted boards: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    return render_template('trash.html', user=session['user'], boards=deleted_boards)
 
 @app.route('/api/boards/create', methods=['POST'])
 def create_board():
@@ -86,16 +111,28 @@ def create_board():
         data = request.json if request.json else {}
         board_id = str(uuid.uuid4())
         
+        base_title = data.get('title', 'Untitled Board')
+        unique_title = base_title
+        
+        existing_boards = db.collection('boards').where('userId', '==', session['user']['uid']).stream()
+        existing_titles = [board.to_dict().get('title', '') for board in existing_boards]
+        
+        if unique_title in existing_titles:
+            counter = 2
+            while f"{base_title} {counter}" in existing_titles:
+                counter += 1
+            unique_title = f"{base_title} {counter}"
+        
         board_data = {
             'userId': session['user']['uid'],
-            'title': data.get('title', 'Untitled Board'),
+            'title': unique_title,
             'createdAt': firestore.SERVER_TIMESTAMP,
             'updatedAt': firestore.SERVER_TIMESTAMP,
             'content': data.get('content', ''),
             'thumbnail': data.get('thumbnail', '')
         }
         
-        print(f"✓ Creating board {board_id} for user {session['user']['uid']}")
+        print(f"✓ Creating board '{unique_title}' ({board_id}) for user {session['user']['uid']}")
         db.collection('boards').document(board_id).set(board_data)
         print(f"✓ Board {board_id} created successfully")
         
@@ -128,6 +165,176 @@ def get_boards():
     
     except Exception as e:
         print(f"Error fetching boards: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/boards/<board_id>/update', methods=['PUT'])
+def update_board(board_id):
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not db:
+        return jsonify({'error': 'Database not initialized'}), 500
+    
+    try:
+        data = request.json if request.json else {}
+        
+        board_ref = db.collection('boards').document(board_id)
+        board_doc = board_ref.get()
+        
+        if not board_doc.exists:
+            return jsonify({'error': 'Board not found'}), 404
+        
+        board_data = board_doc.to_dict()
+        if board_data.get('userId') != session['user']['uid']:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        new_title = data.get('title')
+        if new_title and new_title != board_data.get('title'):
+            existing_boards = db.collection('boards').where('userId', '==', session['user']['uid']).stream()
+            existing_titles = [b.to_dict().get('title', '') for b in existing_boards if b.id != board_id]
+            
+            if new_title in existing_titles:
+                base_title = new_title
+                counter = 2
+                while f"{base_title} {counter}" in existing_titles:
+                    counter += 1
+                new_title = f"{base_title} {counter}"
+        
+        update_data = {
+            'updatedAt': firestore.SERVER_TIMESTAMP
+        }
+        
+        if new_title:
+            update_data['title'] = new_title
+        if 'content' in data:
+            update_data['content'] = data['content']
+        if 'thumbnail' in data:
+            update_data['thumbnail'] = data['thumbnail']
+        
+        board_ref.update(update_data)
+        
+        print(f"✓ Board {board_id} updated successfully")
+        
+        return jsonify({
+            'success': True,
+            'boardId': board_id,
+            'title': new_title if new_title else board_data.get('title')
+        }), 200
+    
+    except Exception as e:
+        print(f"✗ Error updating board: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/boards/<board_id>/delete', methods=['DELETE'])
+def delete_board(board_id):
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not db:
+        return jsonify({'error': 'Database not initialized'}), 500
+    
+    try:
+        board_ref = db.collection('boards').document(board_id)
+        board_doc = board_ref.get()
+        
+        if not board_doc.exists:
+            return jsonify({'error': 'Board not found'}), 404
+        
+        board_data = board_doc.to_dict()
+        if board_data.get('userId') != session['user']['uid']:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        board_ref.update({
+            'deleted': True,
+            'deletedAt': firestore.SERVER_TIMESTAMP
+        })
+        
+        print(f"✓ Board {board_id} moved to trash")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Board moved to trash'
+        }), 200
+    
+    except Exception as e:
+        print(f"✗ Error deleting board: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/boards/<board_id>/restore', methods=['POST'])
+def restore_board(board_id):
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not db:
+        return jsonify({'error': 'Database not initialized'}), 500
+    
+    try:
+        board_ref = db.collection('boards').document(board_id)
+        board_doc = board_ref.get()
+        
+        if not board_doc.exists:
+            return jsonify({'error': 'Board not found'}), 404
+        
+        board_data = board_doc.to_dict()
+        if board_data.get('userId') != session['user']['uid']:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        board_ref.update({
+            'deleted': False,
+            'deletedAt': firestore.DELETE_FIELD
+        })
+        
+        print(f"✓ Board {board_id} restored from trash")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Board restored successfully'
+        }), 200
+    
+    except Exception as e:
+        print(f"✗ Error restoring board: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/boards/<board_id>/permanent-delete', methods=['DELETE'])
+def permanent_delete_board(board_id):
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    if not db:
+        return jsonify({'error': 'Database not initialized'}), 500
+    
+    try:
+        board_ref = db.collection('boards').document(board_id)
+        board_doc = board_ref.get()
+        
+        if not board_doc.exists:
+            return jsonify({'error': 'Board not found'}), 404
+        
+        board_data = board_doc.to_dict()
+        if board_data.get('userId') != session['user']['uid']:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        # Permanently delete the board
+        board_ref.delete()
+        
+        print(f"✓ Board {board_id} permanently deleted")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Board permanently deleted'
+        }), 200
+    
+    except Exception as e:
+        print(f"✗ Error permanently deleting board: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/whiteboard')

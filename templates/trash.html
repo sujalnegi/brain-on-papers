@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard|Brain on Papers</title>
-    <meta name="description" content="Manage your whiteboards and research notes">
+    <title>Trash|Brain on Papers</title>
+    <meta name="description" content="Recover or permanently delete your boards">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -33,7 +33,7 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="/dashboard" class="nav-item active">
+                <a href="/dashboard" class="nav-item">
                     <span class="material-symbols-outlined">dashboard</span>
                     <span>Dashboard</span>
                 </a>
@@ -49,7 +49,7 @@
                     <span class="material-symbols-outlined">schedule</span>
                     <span>Recent</span>
                 </a>
-                <a href="/trash" class="nav-item">
+                <a href="/trash" class="nav-item active">
                     <span class="material-symbols-outlined">delete</span>
                     <span>Trash</span>
                 </a>
@@ -75,7 +75,7 @@
             <header class="top-bar">
                 <div class="search-bar">
                     <span class="material-symbols-outlined">search</span>
-                    <input type="text" placeholder="Search boards...">
+                    <input type="text" placeholder="Search trash...">
                 </div>
 
                 <div class="top-bar-actions">
@@ -85,33 +85,26 @@
             <div class="content-area">
                 <div class="page-header">
                     <div class="header-left">
-                        <h1>My Boards</h1>
-                        <p class="subtitle">Create and manage your whiteboards</p>
+                        <h1>Trash</h1>
+                        <p class="subtitle">Recover or permanently delete your boards</p>
                     </div>
-                    <button class="btn-primary create-board-btn">
-                        <span class="material-symbols-outlined">add</span>
-                        <span>Create New Board</span>
-                    </button>
                 </div>
 
                 <div class="filter-tabs">
-                    <button class="tab-btn active">All Boards</button>
+                    <button class="tab-btn active">Deleted Boards</button>
                 </div>
 
                 <div class="boards-grid">
-                    <div class="board-card new-board">
-                        <div class="new-board-content">
-                            <div class="new-board-icon">
-                                <span class="material-symbols-outlined">add_circle</span>
-                            </div>
-                            <h3>Create New Board</h3>
-                            <p>Start a fresh whiteboard</p>
-                        </div>
+                    {% if boards|length == 0 %}
+                    <div class="empty-trash">
+                        <span class="material-symbols-outlined">delete_outline</span>
+                        <h3>Trash is empty</h3>
+                        <p>Deleted boards will appear here</p>
                     </div>
+                    {% endif %}
 
                     {% for board in boards %}
-                    <div class="board-card" data-board-id="{{ board.id }}"
-                        onclick="window.location.href='/whiteboard/{{ board.id }}'">
+                    <div class="board-card trash-card" data-board-id="{{ board.id }}">
                         <div class="board-preview">
                             {% if board.thumbnail %}
                             <img src="{{ board.thumbnail }}" alt="{{ board.title }}">
@@ -124,18 +117,19 @@
                         <div class="board-info">
                             <h3 class="board-title">{{ board.title }}</h3>
                             <p class="board-date">
-                                {% if board.get('updatedAt') %}
-                                Last modified: Just now
-                                {% else %}
-                                Last modified: Just now
-                                {% endif %}
+                                Deleted: Just now
                             </p>
                         </div>
-                        <div class="board-actions">
-                            <button class="action-btn delete-btn" title="Delete board" data-board-id="{{ board.id }}"
+                        <div class="board-actions trash-actions">
+                            <button class="action-btn restore-btn" title="Restore board" data-board-id="{{ board.id }}"
                                 data-board-title="{{ board.title }}"
-                                onclick="event.stopPropagation(); deleteBoard('{{ board.id }}', '{{ board.title }}')">
-                                <span class="material-symbols-outlined">delete</span>
+                                onclick="restoreBoard('{{ board.id }}', '{{ board.title }}')">
+                                <span class="material-symbols-outlined">restore_from_trash</span>
+                            </button>
+                            <button class="action-btn delete-btn" title="Delete permanently"
+                                data-board-id="{{ board.id }}" data-board-title="{{ board.title }}"
+                                onclick="permanentDelete('{{ board.id }}', '{{ board.title }}')">
+                                <span class="material-symbols-outlined">delete_forever</span>
                             </button>
                         </div>
                     </div>
@@ -145,7 +139,7 @@
             </div>
         </main>
     </div>
-    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/trash.js"></script>
 </body>
 
 </html>

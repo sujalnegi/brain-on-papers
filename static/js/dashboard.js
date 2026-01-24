@@ -56,3 +56,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+async function deleteBoard(boardId, boardTitle) {
+    if (!confirm(`Are you sure you want to delete "${boardTitle}"?\n\nThis action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/boards/${boardId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Remove the board card from the DOM
+            const boardCard = document.querySelector(`[data-board-id="${boardId}"]`);
+            if (boardCard) {
+                boardCard.style.opacity = '0';
+                boardCard.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    boardCard.remove();
+                }, 300);
+            }
+        } else {
+            console.error('Error deleting board:', data.error);
+            alert('Failed to delete board. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error deleting board:', error);
+        alert('Failed to delete board. Please try again.');
+    }
+}
